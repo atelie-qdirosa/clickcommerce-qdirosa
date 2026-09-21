@@ -7,7 +7,8 @@ import CategoryNav from "@/components/CategoryNav";
 import MenuSection from "@/components/MenuSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, X, MessageCircle, UserCircle2 } from "lucide-react";
+import { Search, X, MessageCircle, UserCircle2, Pizza } from "lucide-react";
+import { useHalfPizza } from "@/contexts/HalfPizzaContext";
 import ChatAssistant from "@/components/ChatAssistant";
 import PromoPopup from "@/components/PromoPopup";
 import ProfileDrawer from "@/components/ProfileDrawer";
@@ -42,6 +43,7 @@ const Index = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [rewardsCount, setRewardsCount] = useState(0);
   const activeOrdersCount = useActiveOrdersCount();
+  const { firstHalf, cancelHalfPizza } = useHalfPizza();
   const itemRefs = useRef<Record<string, { triggerClick: (targetSubItemId?: string) => void } | null>>({});
   const deepLinkHandled = useRef(false);
   const menuVisitTracked = useRef(false);
@@ -435,27 +437,7 @@ const Index = () => {
         <StoreClosedBanner />
       </div>
         
-      {/* BUSCA MOBILE */}
-      <div className="order-1 md:order-3 px-4 z-10 mt-1 flex md:hidden mb-1">
-        <div className="relative w-full max-w-4xl mx-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
-          <Input
-            type="text"
-            placeholder="Busque por caderno, agenda, planner, etc..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-10 h-12 text-sm border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
-          />
-          {searchTerm && (
-            <X
-              onClick={() => setSearchTerm("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer"
-            />
-          )}
-        </div>
-      </div>
-
-      {/* MENU DE CATEGORIAS */}
+      {/* BUSCA E MENU DE CATEGORIAS FIXOS */}
       <CategoryNav 
         categories={categories.filter(c => c.showInCategoryNav !== false)} 
         activeCategory={highlightCategory}
@@ -467,22 +449,70 @@ const Index = () => {
           // garante que todas as seções estejam renderizadas antes de rolar
           setVisibleSections(groupedItems.length || 3);
         }}
+        beforeNav={(
+          <div className="px-4 py-2 flex md:hidden">
+
+            <div className="relative w-full max-w-4xl mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
+              <Input
+                type="text"
+                placeholder="Busque por pizza ou ingredientes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10 h-12 text-sm border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
+              />
+              {searchTerm && (
+                <X
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer"
+                />
+              )}
+            </div>
+          </div>
+        )}
+        afterNav={(
+          <div className="px-4 py-3 hidden md:block">
+
+            <div className="relative w-full max-w-4xl mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
+              <Input
+                type="text"
+                placeholder="Busque por pizza ou ingredientes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10 h-12 text-sm border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
+              />
+              {searchTerm && <X onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer" />}
+            </div>
+          </div>
+        )}
       />
 
-      {/* BUSCA DESKTOP */}
-      <div className="px-4 z-10 mt-6 mb-6 hidden md:block">
-        <div className="relative w-full max-w-4xl mx-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
-          <Input
-            type="text"
-            placeholder="Busque por caderno, agenda, planner, etc..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-10 h-12 text-sm border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
-          />
-          {searchTerm && <X onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer" />}
+      {/* BANNER MODO MEIO A MEIO */}
+      {firstHalf && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md">
+          <div className="flex items-center gap-3 rounded-xl border-2 border-orange-400 bg-card shadow-2xl px-4 py-3">
+            <span className="h-10 w-10 shrink-0 rounded-full bg-orange-100 flex items-center justify-center">
+              <Pizza className="h-5 w-5 text-orange-600" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm sm:text-base text-foreground">Escolher a outra metade</p>
+              <p className="text-xs text-muted-foreground truncate">
+                1ª metade: {firstHalf.item.name}
+                {firstHalf.size?.name ? ` (${firstHalf.size.name})` : ""}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={cancelHalfPizza}
+              aria-label="Cancelar meio a meio"
+              className="shrink-0 h-8 w-8 rounded-full bg-muted hover:bg-muted/70 flex items-center justify-center"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CONTAINER DE PRODUTOS */}
       <div className="container mx-auto px-4 pt-0 pb-8 md:pt-8">
